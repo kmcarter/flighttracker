@@ -7,8 +7,11 @@ loop do
   Thread.start(flight_server.accept) do | sock |
     puts("#{sock} connected at #{Time.now}")
     loop do
-      input = sock.gets sock.write(input) puts "User entered: #{input}"
+      input = sock.gets
+      sock.write(input)
+      puts "User entered: #{input}"
     end
-    puts("#{sock} disconnected at #{Time.now}") sock.close
+    puts("#{sock} disconnected at #{Time.now}")
+    sock.close
   end
 end
