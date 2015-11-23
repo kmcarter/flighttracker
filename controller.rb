@@ -1,6 +1,8 @@
 require 'active_record'
 
 class PlaneController
+	MIN_DISTANCE_BETWEEN_PLANES = 5200
+	
 	def initialize
 		ActiveRecord::Base.establish_connection(
 			adapter: 'mysql2',
