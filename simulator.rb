@@ -10,6 +10,10 @@ class FlightSimulator
     @controller = PlaneController.new
   end
   
+  def start
+    
+  end
+  
   def generate_flight
     alphabet = ('A'..'Z').to_a
     digits = (0..9).to_a
@@ -19,3 +23,6 @@ class FlightSimulator
     Flight.create(flight_number: flight_num, speed: speed, status: :descent)
   end
 end
+
+sim = FlightSimulator.new
+sim.start

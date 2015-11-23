@@ -44,6 +44,14 @@ class Flight < ActiveRecord::Base
     return [x, y]
   end
   
+  def adjust_speed new_speed
+    if (new_speed >= 105 && new_speed <= 128)
+      update(speed: new_speed)
+    else
+      raise ArgumentError, "Plane speed must be between 105 and 128."
+    end
+  end
+  
   def divert
     update(status: :diverted)
   end

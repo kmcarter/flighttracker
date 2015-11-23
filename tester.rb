@@ -12,7 +12,7 @@ class ControllerTester < Minitest::Test
   end
   
   def test_flight_creation
-    assert_instance_of Flight, Flight.create, { flight_number: 'ABC1234', speed: 120, status: :descent }
+    assert_instance_of Flight, Flight.create({ flight_number: 'ABC1234', speed: 120, status: :descent })
   end
   
   def test_flight_diversion
@@ -22,6 +22,11 @@ class ControllerTester < Minitest::Test
 #   def test_current_flight_position
 #     assert_equal current_position
 #   end
+  
+  def test_adjust_flight_speed
+    assert_equal true, @plane.adjust_speed(110)
+    #assert_throws ArgumentError, @plane.adjust_speed(80)
+  end
   
 end
 
