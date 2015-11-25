@@ -2,7 +2,6 @@ load 'controller.rb'
 
 class FlightSimulator
   PLANE_FREQUENCY = 30..40
-  ENTRY_ALTITUDE = 10000
   
   def initialize
     @controller = PlaneController.new
