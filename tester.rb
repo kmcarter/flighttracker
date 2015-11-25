@@ -19,13 +19,45 @@ class ControllerTester < Minitest::Test
     assert_equal true, @plane.divert
   end
   
-#   def test_current_flight_position
-#     assert_equal current_position
-#   end
+  def test_flight_landing
+    assert_equal true, @plane.land
+  end
+  
+  def test_distance_traveled
+    assert_equal 0, @plane.distance_traveled(@plane.created_at)
+    #assert_equal Flight::FLIGHT_DISTANCE, @plane.distance_traveled(@plane)
+  end
+  
+  def test_current_flight_position_by_time
+    assert_equal [16000, 47000], @plane.current_position_by_time(@plane.created_at)
+    
+    #won't pass due to rounding errors
+    #snapshot = @plane.created_at + (3000 / @plane.speed)
+    #assert_equal [16101.3667, 32865.8063], @plane.current_position_by_time(snapshot)
+  end
+  
+  def test_current_flight_position_by_distance
+    assert_equal [16101.3667, 32865.8063], @plane.current_position_by_distance(3000)
+    
+    #will never be 0,0 because equations aren't accurate enough 
+    #(see equation roots on Wolram Alpha pages - they are not equal to flight duration or each other's roots)
+    #assert_equal [0, 0], @plane.current_position_by_distance(@plane.created_at - @plane.flight_duration
+  end
   
   def test_adjust_flight_speed
     assert_equal true, @plane.adjust_speed(110)
     #assert_throws ArgumentError, @plane.adjust_speed(80)
+  end
+  
+  def test_flight_duration
+    assert_equal 65291 / @plane.speed, @plane.flight_duration
+  end
+  
+  def test_collision_detection
+    flight2 = Flight.create(flight_number: 'ABC9876', speed: 105, status: :descent, created_at: Time.now)
+    flight1 = Flight.create(flight_number: 'DEF5432', speed: 128, status: :descent, created_at: flight2.created_at - 30.seconds)
+    
+    assert_equal true, flight2.will_collide?
   end
   
 end
@@ -36,7 +68,7 @@ class SimulatorTester < Minitest::Test
   end
   
   def test_flight_generation
-    assert_instance_of Flight, @simulator.generate_flight
+    assert_instance_of Hash, @simulator.generate_flight
   end
 end
 

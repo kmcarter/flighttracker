@@ -17,7 +17,7 @@ class FlightSimulator
     flight_num = ""
     6.times { |i| flight_num += (i < 4) ? alphabet.sample : digits.sample.to_s }
     speed = rand(120..130)
-    Flight.create(flight_number: flight_num, speed: speed, status: :descent)
+    { flight_number: flight_num, speed: speed, status: :descent }
   end
 end
 
