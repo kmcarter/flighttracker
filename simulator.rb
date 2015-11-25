@@ -1,17 +1,15 @@
 load 'controller.rb'
 
 class FlightSimulator
-  ENTRY_X = 16000
-  ENTRY_Y = 47000
-  ENTRY_MIN_ALTITUDE = 8000
-  ENTRY_MAX_ALTITUDE = 12000
+  PLANE_FREQUENCY = 30..40
+  ENTRY_ALTITUDE = 10000
   
   def initialize
     @controller = PlaneController.new
   end
   
   def start
-    
+    # generates flights ever 30-40 seconds
   end
   
   def generate_flight
