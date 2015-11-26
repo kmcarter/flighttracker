@@ -93,16 +93,16 @@ class Flight < ActiveRecord::Base
 		#cache previous flight for future use
 		# can't use enum symbols in where clause for some reason...
 		@previous_flight = Flight.where(status: [ 0, 1, 2 ], created_at: (created_at - 1.hour)...created_at).order(created_at: :desc).limit(1).first unless instance_variable_defined? :@previous_flight
-		p @previous_flight
+		#p @previous_flight
 		#byebug
 		current_time = @previous_flight.created_at + @previous_flight.flight_duration
-		p "Current time: " + current_time.to_s
+		#p "Current time: " + current_time.to_s
 		current_position = current_position_by_time(current_time)
 		previous_flight_curr_position = @previous_flight.current_position_by_time(current_time)
-		p "Current position of current flight: " + current_position[0].to_s + ", " + current_position[1].to_s
-		p "Current position of previous flight: " + previous_flight_curr_position[0].to_s + ", " + previous_flight_curr_position[1].to_s
+		#p "Current position of current flight: " + current_position[0].to_s + ", " + current_position[1].to_s
+		#p "Current position of previous flight: " + previous_flight_curr_position[0].to_s + ", " + previous_flight_curr_position[1].to_s
 		distance = Math.hypot(previous_flight_curr_position.first - current_position.first, previous_flight_curr_position.last - current_position.last)
-		p distance.to_s
+		#p distance.to_s
 		distance < MIN_DISTANCE_BETWEEN_PLANES
 	end
   
