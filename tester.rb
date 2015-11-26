@@ -53,8 +53,10 @@ class ControllerTester < Minitest::Test
   end
   
   def test_collision_detection
-    assert_equal true, @colliding_flight2.will_collide?
-    assert_equal false, @colliding_flight3.will_collide?
+		printf "Flight ID %d (speed of %d)\n", @colliding_flight2.id, @colliding_flight2.speed
+    assert_equal true, @colliding_flight2.will_collide?, "Flight 2"
+		printf "Flight ID %d (speed of %d)\n", @colliding_flight3.id, @colliding_flight3.speed
+    assert_equal false, @colliding_flight3.will_collide?, "Flight 3"
   end
   
   def test_flight_diversion
