@@ -1,6 +1,6 @@
 require 'minitest/autorun'
 require 'minitest/pride'
-load 'controller.rb'
+#load 'controller.rb'
 #load 'server.rb'
 load 'simulator.rb'
 #Cheat sheet: http://danwin.com/2013/03/ruby-minitest-cheat-sheet/
@@ -9,14 +9,13 @@ class ControllerTester < Minitest::Test
   def setup
     @controller = PlaneController.new
     @plane = Flight.all.last
+    @colliding_flight3 = Flight.create(flight_number: 'GHI1234', speed: 115, status: :descent, created_at: Time.now)
+    @colliding_flight2 = Flight.create(flight_number: 'ABC9876', speed: 128, status: :descent, created_at: @colliding_flight3.created_at - 30.seconds)
+    @colliding_flight1 = Flight.create(flight_number: 'DEF5432', speed: 105, status: :descent, created_at: @colliding_flight2.created_at - 30.seconds)
   end
   
   def test_flight_creation
     assert_instance_of Flight, Flight.create({ flight_number: 'ABC1234', speed: 120, status: :descent })
-  end
-  
-  def test_flight_diversion
-    assert_equal true, @plane.divert
   end
   
   def test_flight_landing
@@ -54,10 +53,16 @@ class ControllerTester < Minitest::Test
   end
   
   def test_collision_detection
-    flight2 = Flight.create(flight_number: 'ABC9876', speed: 105, status: :descent, created_at: Time.now)
-    flight1 = Flight.create(flight_number: 'DEF5432', speed: 128, status: :descent, created_at: flight2.created_at - 30.seconds)
-    
-    assert_equal true, flight2.will_collide?
+    assert_equal true, @colliding_flight2.will_collide?
+    assert_equal false, @colliding_flight3.will_collide?
+  end
+  
+  def test_flight_diversion
+    assert_equal true, @colliding_flight2.divert
+  end
+  
+  def test_maximum_speed_calculation
+    assert_equal 115, @colliding_flight3.find_maximum_speed
   end
   
 end

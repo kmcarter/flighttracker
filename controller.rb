@@ -90,14 +90,15 @@ class Flight < ActiveRecord::Base
 	end
 	
 	def will_collide? at_speed = speed
+		#printf "Flight #%s (speed of %d)\n", flight_number, speed
 		#cache previous flight for future use
 		# can't use enum symbols in where clause for some reason...
-		@previous_flight = Flight.where(status: [ 0, 1, 2 ], created_at: created_at..Time.now).order(created_at: :desc).limit(1).offset(1).first unless instance_variable_defined? :@previous_flight
-		
+		@previous_flight = Flight.where(status: [ 0, 1, 2 ], created_at: (created_at - 1.hour)...created_at).order(created_at: :desc).limit(1).first unless instance_variable_defined? :@previous_flight
+		#p @previous_flight
 		#byebug
 		current_position = current_position_by_time(@previous_flight.created_at + @previous_flight.flight_duration)
 		distance = Math.hypot(current_position.first, current_position.last)
-		
+		#p distance.to_s
 		distance < MIN_DISTANCE_BETWEEN_PLANES
 	end
   
