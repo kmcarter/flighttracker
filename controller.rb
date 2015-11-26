@@ -1,4 +1,5 @@
 require 'active_record'
+require 'byebug'
 
 class PlaneController
 	
@@ -32,13 +33,11 @@ class PlaneController
 	def direct_flight flight
 		if flight.will_collide?
 			new_speed = flight.find_maximum_speed
-			if new_speed >= Flight::MIN_DESCENT_SPEED
+			if !new_speed.is_nil? && new_speed >= Flight::MIN_DESCENT_SPEED
 				flight.adjust_speed new_speed
 			else
 				flight.divert
 			end
-		else
-			flight.divert
 		end
 	end
 end
@@ -92,10 +91,12 @@ class Flight < ActiveRecord::Base
 	
 	def will_collide? at_speed = speed
 		#cache previous flight for future use
-		@previous_flight = Flight.where(status: [ :descent, :final_approach, :landed ]) unless instance_variable_defined? :@previous_flight
+		# can't use enum symbols in where clause for some reason...
+		@previous_flight = Flight.where(status: [ 0, 1, 2 ], created_at: created_at..Time.now).order(created_at: :desc).limit(1).offset(1).first unless instance_variable_defined? :@previous_flight
 		
-		current_position = current_position_by_time(@previous_flight.flight_duration)
-		distance = hypot(current_position.first, current_position.last)
+		#byebug
+		current_position = current_position_by_time(@previous_flight.created_at + @previous_flight.flight_duration)
+		distance = Math.hypot(current_position.first, current_position.last)
 		
 		distance < MIN_DISTANCE_BETWEEN_PLANES
 	end
