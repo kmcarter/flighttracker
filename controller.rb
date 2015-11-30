@@ -26,8 +26,7 @@ class PlaneController
 	end
 	
 	def new_flight flight_data
-		flight = Flight.create(flight_data)
-		direct_flight flight
+		direct_flight Flight.create(flight_data)
 	end
 	
 	def direct_flight flight
