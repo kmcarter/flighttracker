@@ -1,13 +1,13 @@
 require 'minitest/autorun'
 require 'minitest/pride'
 #load 'controller.rb'
-#load 'server.rb'
+load 'server.rb'
 load 'simulator.rb'
 #Cheat sheet: http://danwin.com/2013/03/ruby-minitest-cheat-sheet/
 
 class ControllerTester < Minitest::Test
   def setup
-    @controller = PlaneController.new
+    @controller = FlightController.new
     @plane = Flight.all.last
     @colliding_flight3 = Flight.create(flight_number: 'GHI1234', speed: 115, status: :descent, created_at: Time.now)
     @colliding_flight2 = Flight.create(flight_number: 'ABC9876', speed: 128, status: :descent, created_at: @colliding_flight3.created_at - 30.seconds)
@@ -30,17 +30,15 @@ class ControllerTester < Minitest::Test
   def test_current_flight_position_by_time
     assert_equal [16000, 47000], @plane.current_position_by_time(@plane.created_at)
     
-    #won't pass due to rounding errors
-    #snapshot = @plane.created_at + (3000 / @plane.speed)
-    #assert_equal [16101.3667, 32865.8063], @plane.current_position_by_time(snapshot)
+    snapshot = @plane.created_at + (3000 / @plane.speed)
+    assert_equal [16100, 33134], @plane.current_position_by_time(snapshot)
   end
   
   def test_current_flight_position_by_distance
-    assert_equal [16101.3667, 32865.8063], @plane.current_position_by_distance(3000)
+    assert_equal [16101, 32868], @plane.current_position_by_distance(3000)
     
-    #will never be 0,0 because equations aren't accurate enough 
-    #(see equation roots on Wolram Alpha pages - they are not equal to flight duration or each other's roots)
-    #assert_equal [0, 0], @plane.current_position_by_distance(@plane.created_at - @plane.flight_duration
+    #will never be 0,0 because equations aren't accurate enough
+    assert_equal [44, -26], @plane.current_position_by_distance(64640)
   end
   
   def test_adjust_flight_speed
@@ -49,7 +47,7 @@ class ControllerTester < Minitest::Test
   end
   
   def test_flight_duration
-    assert_equal 65291 / @plane.speed, @plane.flight_duration
+    assert_equal 64640 / @plane.speed, @plane.flight_duration
   end
   
   def test_collision_detection
@@ -67,6 +65,9 @@ class ControllerTester < Minitest::Test
     assert_equal 115, @colliding_flight3.find_maximum_speed
   end
   
+	def test_current_flights
+		assert_instance_of Flight::ActiveRecord_Relation, FlightController.current_flights
+	end
 end
 
 class SimulatorTester < Minitest::Test
@@ -79,5 +80,8 @@ class SimulatorTester < Minitest::Test
   end
 end
 
-class WebServerTester < Minitest::Test
+class ServerTester < Minitest::Test
+	def setup
+		@server = FlightServer.new
+	end
 end

@@ -4,7 +4,7 @@ class FlightSimulator
   PLANE_FREQUENCY = 30..40
   
   def initialize
-    @controller = PlaneController.new
+    @controller = FlightController.new
   end
   
   def start
@@ -30,5 +30,5 @@ class FlightSimulator
   end
 end
 
-sim = FlightSimulator.new
-sim.start
+#sim = FlightSimulator.new
+#sim.start

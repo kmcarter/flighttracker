@@ -1,7 +1,7 @@
 require 'active_record'
 require 'byebug'
 
-class PlaneController
+class FlightController
 	
 	def initialize
 		ActiveRecord::Base.establish_connection(
@@ -39,11 +39,15 @@ class PlaneController
 			end
 		end
 	end
+	
+	def self.current_flights
+		Flight.where(status: [0, 1]).order(created_at: :desc)
+	end
 end
 
 class Flight < ActiveRecord::Base
   ENTRY_ALTITUDE = 10000
-	FLIGHT_DISTANCE = 65291
+	FLIGHT_DISTANCE = 64640
 	FINAL_APPROACH_DISTANCE = 15021
   MIN_DESCENT_SPEED = 105
   MAX_DESCENT_SPEED = 128
@@ -67,17 +71,17 @@ class Flight < ActiveRecord::Base
   
 	def current_position_by_distance distance = distance_traveled
 		#http://www.wolframalpha.com/input/?i=%28+2.1+*+10%5E-12+*+x**3+%29+-++%28+4.41+*+10%5E-6+*+x**2+%29+%2B+%28+0.047+*+x%29+%2B+16000
-    x = ( 2.1e-12 * distance**3 ) -
+    x = ( -2.1e-12 * distance**3 ) -
         ( 4.41e-6 * distance**2 ) +
         ( 0.047 * distance ) + 16000
 
 		#http://www.wolframalpha.com/input/?i=%28+2.23+*+10%5E-14+*+x**4+%29+-++%28+2+*+10%5E-9+*+x**3+%29+%2B+%28+1.02+*+10%5E-4+*+x**2+%29+-+%28+5+*+x%29+%2B+47000
     y = ( 2.23e-14 * distance**4 ) -
         ( 2e-9 * distance**3 ) +
-        ( 1.02e-4 * distance**2 ) -
+        ( 1.022e-4 * distance**2 ) -
         ( 5 * distance ) + 47000
 
-    return [x, y]
+		return [x.round(0), y.round(0)]
   end
 	
 	def current_altitude(snapshot = Time.now)
@@ -100,6 +104,8 @@ class Flight < ActiveRecord::Base
 		previous_flight_curr_position = @previous_flight.current_position_by_time(current_time)
 		#p "Current position of current flight: " + current_position[0].to_s + ", " + current_position[1].to_s
 		#p "Current position of previous flight: " + previous_flight_curr_position[0].to_s + ", " + previous_flight_curr_position[1].to_s
+		
+		#TODO: can no longer use hypot method because now we need to calculate from [44, -26], not [0, 0]
 		distance = Math.hypot(previous_flight_curr_position.first - current_position.first, previous_flight_curr_position.last - current_position.last)
 		#p distance.to_s
 		distance < MIN_DISTANCE_BETWEEN_PLANES
