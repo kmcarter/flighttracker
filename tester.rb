@@ -1,6 +1,5 @@
 require 'minitest/autorun'
 require 'minitest/pride'
-#load 'controller.rb'
 load 'server.rb'
 load 'simulator.rb'
 #Cheat sheet: http://danwin.com/2013/03/ruby-minitest-cheat-sheet/
@@ -38,7 +37,7 @@ class ControllerTester < Minitest::Test
     assert_equal [16101, 32868], @plane.current_position_by_distance(3000)
     
     #will never be 0,0 because equations aren't accurate enough
-    assert_equal [44, -26], @plane.current_position_by_distance(64640)
+    assert_equal Flight::FINAL_APPROACH_COORDS, @plane.current_position_by_distance(Flight::FLIGHT_DISTANCE)
   end
   
   def test_adjust_flight_speed
@@ -47,7 +46,7 @@ class ControllerTester < Minitest::Test
   end
   
   def test_flight_duration
-    assert_equal 64640 / @plane.speed, @plane.flight_duration
+    assert_equal Flight::FLIGHT_DISTANCE / @plane.speed, @plane.flight_duration
   end
   
   def test_collision_detection
