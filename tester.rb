@@ -67,8 +67,8 @@ class ControllerTester < Minitest::Test
     #assert_throws ArgumentError, @plane.adjust_speed(80)
   end
   
-	def test_current_flights
-		assert_instance_of Flight::ActiveRecord_Relation, FlightController.current_flights
+	def test_airborne_flights
+		assert_instance_of Flight::ActiveRecord_Relation, FlightController.airborne_flights
 	end
 end
 

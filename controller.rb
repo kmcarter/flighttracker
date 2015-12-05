@@ -45,7 +45,10 @@ class FlightController
 		end
 	end
 	
-	def self.current_flights
+	def self.airborne_flights
+		Flight.where(status: [0, 1]).map | flight | do
+			flight.land if flight.landed?
+		end
 		Flight.where(status: [0, 1]).order(created_at: :desc)
 	end
 end
