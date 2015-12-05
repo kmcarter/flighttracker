@@ -1,6 +1,5 @@
 require "socket"
 require "json"
-require 'byebug'
 load 'controller.rb'
 
 class FlightServer
@@ -40,7 +39,7 @@ class FlightServer
   end
   
   def serve_request rel_path, socket
-    #path_segments = rel_path.split('/')
+    #with thanks to https://practicingruby.com/articles/implementing-an-http-file-server
     rel_path = '/index.html' if rel_path == '/'
     path = WEB_ROOT + rel_path
     
