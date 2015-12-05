@@ -20,10 +20,6 @@ class ControllerTester < Minitest::Test
     assert_instance_of Flight, Flight.create({ flight_number: 'ABC1234', speed: 128, status: :descent })
   end
   
-  def test_flight_landing
-    assert_equal true, @plane.land
-  end
-  
   def test_distance_traveled
     assert_equal 0, @plane.distance_traveled(@plane.created_at)
 		assert_equal Flight::FLIGHT_DISTANCE, @plane.distance_traveled(@plane.created_at + 505)
@@ -48,9 +44,7 @@ class ControllerTester < Minitest::Test
   end
   
   def test_collision_detection
-		printf "Flight ID %d (speed of %d)\n", @colliding_flight2.id, @colliding_flight2.speed
 		assert_equal true, @colliding_flight2.will_collide?, "#2: " + @colliding_flight2.to_s
-		printf "Flight ID %d (speed of %d)\n", @colliding_flight3.id, @colliding_flight3.speed
     assert_equal false, @colliding_flight3.will_collide?, "#3: " + @colliding_flight3.to_s
   end
   
@@ -67,8 +61,16 @@ class ControllerTester < Minitest::Test
     #assert_throws ArgumentError, @plane.adjust_speed(80)
   end
   
+  def test_flight_landing
+    assert_equal true, @plane.land
+  end
+  
 	def test_airborne_flights
 		assert_instance_of Flight::ActiveRecord_Relation, FlightController.airborne_flights
+	end
+  
+	def test_landed_flights
+		assert_instance_of Flight::ActiveRecord_Relation, FlightController.landed_flights
 	end
 end
 

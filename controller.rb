@@ -14,18 +14,6 @@ class FlightController
 		)
 	end
 	
-	def create_tables
-		ActiveRecord::Schema.define do
-			create_table :flights do | t |
-        t.string :flight_number, null: false
-        t.integer :speed, null: false
-        t.integer :status, null: false
-        #t.column :status, :enum, limit: [ :descent, :final_approach, :landed, :diverted ], default: :descent
-				t.timestamps null: false
-			end
-		end
-	end
-	
 	def new_flight flight_data
 		new_flight = Flight.create(flight_data)
 		#may be nil, if simulator was just started
@@ -46,10 +34,24 @@ class FlightController
 	end
 	
 	def self.airborne_flights
-		Flight.where(status: [0, 1]).map | flight | do
-			flight.land if flight.landed?
-		end
+		Flight.where(status: [0, 1]).map { | flight | flight.land if flight.landed? }
 		Flight.where(status: [0, 1]).order(created_at: :desc)
+	end
+	
+	def self.landed_flights seconds_ago = 120
+		Flight.where(status: 2, updated_at: (Time.now - seconds_ago..Time.now))
+	end
+	
+	def self.create_tables
+		ActiveRecord::Schema.define do
+			create_table :flights do | t |
+        t.string :flight_number, null: false
+        t.integer :speed, null: false
+        t.integer :status, null: false
+        #t.column :status, :enum, limit: [ :descent, :final_approach, :landed, :diverted ], default: :descent
+				t.timestamps null: false
+			end
+		end
 	end
 end
 
@@ -108,11 +110,11 @@ class Flight < ActiveRecord::Base
 		#p "Previous flight created at: " + previous_flight.created_at.to_s
 		#p "Previous flight arrival time: " + prev_flight_arrival_time.to_s
 		current_position = current_position_by_time(prev_flight_arrival_time)
-		printf "Current position of current flight: %d, %d\n", current_position.first, current_position.last
+		#printf "Current position of current flight: %d, %d\n", current_position.first, current_position.last
 		
 		distance = Math.hypot(current_position.first - FINAL_APPROACH_COORDS.first, current_position.last - FINAL_APPROACH_COORDS.last)
 		
-		printf "Distance between flights: %d\n", distance
+		#printf "Distance between flights: %d\n", distance
 		distance < MIN_DISTANCE_BETWEEN_PLANES || prev_flight_arrival_time > (created_at + flight_duration)
 	end
   
@@ -136,6 +138,7 @@ class Flight < ActiveRecord::Base
 	end
 	
 	def landed?
+		return true if status == :landed
 		Time.now - created_at > flight_duration + (FINAL_APPROACH_DISTANCE / (speed + 70 / 2))
 	end
 	
