@@ -9,9 +9,10 @@ class FlightServer
     'js' => 'application/javascript',
     'css' => 'text/css',
     'png' => 'image/png',
-    'jpg' => 'image/jpeg'
+    'jpg' => 'image/jpeg',
+    'txt' => 'text/plain'
   }
-  DEFAULT_CONTENT_TYPE = 'application/octet-stream'
+  DEFAULT_CONTENT_TYPE = 'text/plain'
   WEB_ROOT = 'public'
   
   def initialize port = 80
@@ -44,51 +45,57 @@ class FlightServer
     path = WEB_ROOT + rel_path
     
     if rel_path.start_with? '/entry'
-      "Creating flight from params"
+      message = JSON.generate(new_flight(path))
+      socket.print headers(message, CONTENT_TYPE_MAPPING['json'])
+      socket.print message
     elsif rel_path.start_with? '/tracking_info'
-      current_flights_to_json
+      message = flight_statuses_to_json
+      socket.print headers(message, CONTENT_TYPE_MAPPING['json'])
+      socket.print message
     else
       if File.exist?(path) && !File.directory?(path)
         File.open(path, 'rb') do |file|
-          socket.print "HTTP/1.1 200 OK\r\n" +
-                       "Content-Type: #{content_type(file)}\r\n" +
-                       "Content-Length: #{file.size}\r\n" +
-                       "Connection: close\r\n"
-
-          socket.print "\r\n"
-
+          socket.print headers(file, content_type(file))
           # write the contents of the file to the socket
           IO.copy_stream(file, socket)
         end
       else
         message = "File not found\n"
-        print message
+        #print message
 
         # respond with a 404 error code to indicate the file does not exist
-        socket.print "HTTP/1.1 404 Not Found\r\n" +
-                     "Content-Type: text/plain\r\n" +
-                     "Content-Length: #{message.size}\r\n" +
-                     "Connection: close\r\n"
-
-        socket.print "\r\n"
-
+        socket.print headers(message, CONTENT_TYPE_MAPPING['txt'], "404 Not Found")
         socket.print message
       end
     end
+    nil
+  end
+  
+  def headers content, content_type, status_code = "200 OK"
+    "HTTP/1.1 #{status_code}\r\n" +
+    "Content-Type: #{content_type}\r\n" +
+    "Content-Length: #{content.size}\r\n" +
+    "Connection: close\r\n" +
+    "\r\n"
   end
   
   def content_type(path)
+    return DEFAULT_CONTENT_TYPE if path.nil?
     ext = File.extname(path).split(".").last
     CONTENT_TYPE_MAPPING.fetch(ext, DEFAULT_CONTENT_TYPE)
   end
   
-  def current_flights_to_json
-    flights = FlightController.airborne_flights.map do | flight |
-      { id: flight.id, flight_num: flight.flight_num, speed: flight.speed, altitude: flight.current_altitude }
-    end
-    JSON.generate(flights)
+  def new_flight path
+    query_args = path.sub(/\/entry\?/, '').sub(/flight/, 'flight_num').split('&').map { | pair | pair.split('=') }.to_h
+    @controller.new_flight(query_args)
+  end
+  
+  def flight_statuses_to_json
+    all_flights = FlightController.landed_flights.concat(FlightController.airborne_flights)
+    flights = all_flights.map { | flight | flight.to_h }
+    JSON.generate({ aircrafts: flights })
   end
 end
 
 srv = FlightServer.new(3000)
-srv.start
+#srv.start

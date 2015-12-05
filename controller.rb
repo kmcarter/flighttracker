@@ -126,7 +126,7 @@ class Flight < ActiveRecord::Base
   end
 	
 	def find_maximum_speed
-		beginning_speed = speed
+		beginning_speed = speed - 1
 		while beginning_speed > MIN_DESCENT_SPEED
 			if will_collide? beginning_speed
 				beginning_speed -= 1
@@ -134,6 +134,7 @@ class Flight < ActiveRecord::Base
 				return beginning_speed
 			end
 		end
+		nil
 	end
 	
 	def landed?
@@ -151,5 +152,10 @@ class Flight < ActiveRecord::Base
 	
 	def to_s
 		"Flight ##{flight_number} (ID #{id}) flying at #{speed} m/s"
+	end
+	
+	def to_h
+		current_position = current_position_by_time
+		{ flight: flight_number, x: current_position.first, y: current_position.last, speed: speed, altitude: current_altitude, status: status }
 	end
 end
