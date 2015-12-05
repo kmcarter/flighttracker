@@ -53,7 +53,8 @@ class ControllerTester < Minitest::Test
   end
   
   def test_maximum_speed_calculation
-    assert_equal 115, @colliding_flight3.find_maximum_speed
+    assert_equal 114, @colliding_flight3.find_maximum_speed
+		assert_equal nil, @colliding_flight1.find_maximum_speed
   end
   
   def test_adjust_flight_speed
@@ -87,5 +88,28 @@ end
 class ServerTester < Minitest::Test
 	def setup
 		@server = FlightServer.new
+	end
+	
+	def test_serve_request
+		assert_instance_of String, @server.serve_request('/')
+	end
+	
+	def test_content_type
+		assert_equal 'application/json', @server.content_type('/test.json')
+		assert_equal 'application/javascript', @server.content_type('/js/global.js')
+		assert_equal 'text/css', @server.content_type('/css/tracker.css')
+		assert_equal FlightServer::DEFAULT_CONTENT_TYPE, @server.content_type('/')
+		assert_equal 'text/plain', @server.content_type('/test.txt')
+		assert_equal 'image/jpeg', @server.content_type('/img/flight.jpg')
+		assert_equal 'image/jpeg', @server.content_type('/img/flight.JPEG')
+		assert_equal 'image/png', @server.content_type('/img/flight.png')
+	end
+	
+	def test_flight_statuses_to_json
+		assert_instance_of String, @server.flight_statuses_to_json
+	end
+	
+	def test_new_flight
+		assert_instance_of Flight, @server.new_flight('/entry?flight=XYZ4932&speed=105')
 	end
 end

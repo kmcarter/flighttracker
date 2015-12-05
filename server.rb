@@ -10,9 +10,10 @@ class FlightServer
     'css' => 'text/css',
     'png' => 'image/png',
     'jpg' => 'image/jpeg',
+    'jpeg' => 'image/jpeg',
     'txt' => 'text/plain'
   }
-  DEFAULT_CONTENT_TYPE = 'text/plain'
+  DEFAULT_CONTENT_TYPE = 'application/json'
   WEB_ROOT = 'public'
   
   def initialize port = 80
@@ -29,7 +30,7 @@ class FlightServer
       Thread.start(@flight_server.accept) do | sock |
         path = sock.gets.split[1]
         p "Request for " + path
-        serve_request(path, sock)
+        sock.print serve_request(path)
         sock.close
       end
     end
@@ -39,54 +40,46 @@ class FlightServer
     @flight_server.close
   end
   
-  def serve_request rel_path, socket
+  def serve_request rel_path
     #with thanks to https://practicingruby.com/articles/implementing-an-http-file-server
     rel_path = '/index.html' if rel_path == '/'
     path = WEB_ROOT + rel_path
     
     if rel_path.start_with? '/entry'
       message = JSON.generate(new_flight(path))
-      socket.print headers(message, CONTENT_TYPE_MAPPING['json'])
-      socket.print message
+      return headers(message.size) + message
     elsif rel_path.start_with? '/tracking_info'
       message = flight_statuses_to_json
-      socket.print headers(message, CONTENT_TYPE_MAPPING['json'])
-      socket.print message
+      return headers(message.size) + message
     else
       if File.exist?(path) && !File.directory?(path)
         File.open(path, 'rb') do |file|
-          socket.print headers(file, content_type(file))
-          # write the contents of the file to the socket
-          IO.copy_stream(file, socket)
+          return headers(file.size, content_type(path)) + file.read
         end
       else
         message = "File not found\n"
-        #print message
-
         # respond with a 404 error code to indicate the file does not exist
-        socket.print headers(message, CONTENT_TYPE_MAPPING['txt'], "404 Not Found")
-        socket.print message
+        return headers(message.size, CONTENT_TYPE_MAPPING['txt'], "404 Not Found") + message
       end
     end
-    nil
   end
   
-  def headers content, content_type, status_code = "200 OK"
+  def headers size, type = DEFAULT_CONTENT_TYPE, status_code = "200 OK"
     "HTTP/1.1 #{status_code}\r\n" +
-    "Content-Type: #{content_type}\r\n" +
-    "Content-Length: #{content.size}\r\n" +
+    "Content-Type: #{type}\r\n" +
+    "Content-Length: #{size}\r\n" +
     "Connection: close\r\n" +
     "\r\n"
   end
   
   def content_type(path)
     return DEFAULT_CONTENT_TYPE if path.nil?
-    ext = File.extname(path).split(".").last
+    ext = File.extname(path).downcase.split(".").last
     CONTENT_TYPE_MAPPING.fetch(ext, DEFAULT_CONTENT_TYPE)
   end
   
   def new_flight path
-    query_args = path.sub(/\/entry\?/, '').sub(/flight/, 'flight_num').split('&').map { | pair | pair.split('=') }.to_h
+    query_args = path.sub(/\/entry\?/, '').sub(/flight/, 'flight_number').split('&').map { | pair | pair.split('=') }.to_h
     @controller.new_flight(query_args)
   end
   
