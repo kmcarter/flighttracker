@@ -8,9 +8,12 @@ class ControllerTester < Minitest::Test
   def setup
     @controller = FlightController.new
     @plane = Flight.all.last
-    @colliding_flight3 = Flight.create(flight_number: 'GHI1234', speed: 115, status: :descent, created_at: Time.now)
-    @colliding_flight2 = Flight.create(flight_number: 'ABC9876', speed: 128, status: :descent, created_at: @colliding_flight3.created_at - 30.seconds)
-    @colliding_flight1 = Flight.create(flight_number: 'DEF5432', speed: 105, status: :descent, created_at: @colliding_flight2.created_at - 30.seconds)
+		@colliding_flight3 = Flight.find(756) #115 m/s
+		@colliding_flight2 = Flight.find(757) #128 m/s
+		@colliding_flight1 = Flight.find(758) #105 m/s
+		
+		@colliding_flight3.previous_flight = @colliding_flight2
+		@colliding_flight2.previous_flight = @colliding_flight1
   end
   
   def test_flight_creation
@@ -29,7 +32,7 @@ class ControllerTester < Minitest::Test
   def test_current_flight_position_by_time
     assert_equal [16000, 47000], @plane.current_position_by_time(@plane.created_at)
     
-    snapshot = @plane.created_at + (3000 / @plane.speed)
+		snapshot = @plane.created_at + (3000 / @plane.speed)
     assert_equal [16100, 33134], @plane.current_position_by_time(snapshot)
   end
   

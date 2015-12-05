@@ -4,6 +4,7 @@ require 'byebug'
 class FlightController
 	
 	def initialize
+		@most_recent_flight = nil
 		ActiveRecord::Base.establish_connection(
 			adapter: 'mysql2',
       database: 'flight_tracker',
@@ -26,7 +27,11 @@ class FlightController
 	end
 	
 	def new_flight flight_data
-		direct_flight Flight.create(flight_data)
+		new_flight = Flight.create(flight_data)
+		#may be nil, if simulator was just started
+		new_flight.previous_flight = @most_recent_flight
+		direct_flight new_flight
+		@most_recent_flight = new_flight
 	end
 	
 	def direct_flight flight
@@ -53,6 +58,7 @@ class Flight < ActiveRecord::Base
   MIN_DESCENT_SPEED = 105
   MAX_DESCENT_SPEED = 128
 	MIN_DISTANCE_BETWEEN_PLANES = 5200
+	attr_accessor :previous_flight
 	
   #From: https://github.com/ctran/annotate_models/issues/132#issuecomment-40807083
   enum status: [ :descent, :final_approach, :landed, :diverted ] unless instance_methods.include? :status
@@ -94,20 +100,20 @@ class Flight < ActiveRecord::Base
 	end
 	
 	def will_collide? at_speed = speed
-		#cache previous flight for future use
-		# can't use enum symbols in where clause for some reason...
-		@previous_flight = Flight.where(status: [ 0, 1, 2 ], created_at: (created_at - 1.hour)...created_at).order(created_at: :desc).limit(1).first unless instance_variable_defined? :@previous_flight
+		return false if previous_flight.nil?
 		#p @previous_flight
-		#byebug
-		current_time = @previous_flight.created_at + @previous_flight.flight_duration
+		current_time = previous_flight.created_at + previous_flight.flight_duration
 		#p "Current time: " + current_time.to_s
 		current_position = current_position_by_time(current_time)
-		previous_flight_curr_position = @previous_flight.current_position_by_time(current_time)
+		previous_flight_curr_position = previous_flight.current_position_by_time(current_time)
 		#p "Current position of current flight: " + current_position[0].to_s + ", " + current_position[1].to_s
 		#p "Current position of previous flight: " + previous_flight_curr_position[0].to_s + ", " + previous_flight_curr_position[1].to_s
 		
 		#TODO: can no longer use hypot method because now we need to calculate from [44, -26], not [0, 0]
-		distance = Math.hypot(previous_flight_curr_position.first - current_position.first, previous_flight_curr_position.last - current_position.last)
+		distance = Math.hypot(
+			previous_flight_curr_position.first - current_position.first - FINAL_APPROACH_COORDS.first,
+			previous_flight_curr_position.last - current_position.last - FINAL_APPROACH_COORDS.last
+		)
 		#p distance.to_s
 		distance < MIN_DISTANCE_BETWEEN_PLANES
 	end
