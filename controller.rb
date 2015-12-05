@@ -77,13 +77,11 @@ class Flight < ActiveRecord::Base
 	end
   
 	def current_position_by_distance distance = distance_traveled
-		#http://www.wolframalpha.com/input/?i=%28+2.1+*+10%5E-12+*+x**3+%29+-++%28+4.41+*+10%5E-6+*+x**2+%29+%2B+%28+0.047+*+x%29+%2B+16000
-    x = ( -2.1e-12 * distance**3 ) -
+		x = ( -2.1e-12 * distance**3 ) -
         ( 4.41e-6 * distance**2 ) +
         ( 0.047 * distance ) + 16000
 
-		#http://www.wolframalpha.com/input/?i=%28+2.23+*+10%5E-14+*+x**4+%29+-++%28+2+*+10%5E-9+*+x**3+%29+%2B+%28+1.02+*+10%5E-4+*+x**2+%29+-+%28+5+*+x%29+%2B+47000
-    y = ( 2.23e-14 * distance**4 ) -
+		y = ( 2.23e-14 * distance**4 ) -
         ( 2e-9 * distance**3 ) +
         ( 1.022e-4 * distance**2 ) -
         ( 5 * distance ) + 47000
@@ -91,8 +89,8 @@ class Flight < ActiveRecord::Base
 		return [x.round(0), y.round(0)]
   end
 	
-	def current_altitude(snapshot = Time.now)
-		ENTRY_ALTITUDE – (snapshot - created_at) * 9200 / flight_duration
+	def current_altitude snapshot = Time.now
+		ENTRY_ALTITUDE - (snapshot - created_at) * 9200 / flight_duration
 	end
 	
 	def flight_duration
@@ -101,21 +99,18 @@ class Flight < ActiveRecord::Base
 	
 	def will_collide? at_speed = speed
 		return false if previous_flight.nil?
-		#p @previous_flight
-		current_time = previous_flight.created_at + previous_flight.flight_duration
-		#p "Current time: " + current_time.to_s
-		current_position = current_position_by_time(current_time)
-		previous_flight_curr_position = previous_flight.current_position_by_time(current_time)
-		#p "Current position of current flight: " + current_position[0].to_s + ", " + current_position[1].to_s
-		#p "Current position of previous flight: " + previous_flight_curr_position[0].to_s + ", " + previous_flight_curr_position[1].to_s
+		#p "Previous flight create time: " + previous_flight.created_at.to_s
+		prev_flight_arrival_time = previous_flight.created_at + previous_flight.flight_duration
+		#printf "Previous flight duration and speed: %s, %d\n", previous_flight.flight_duration.to_s, previous_flight.speed
+		#p "Previous flight created at: " + previous_flight.created_at.to_s
+		#p "Previous flight arrival time: " + prev_flight_arrival_time.to_s
+		current_position = current_position_by_time(prev_flight_arrival_time)
+		printf "Current position of current flight: %d, %d\n", current_position.first, current_position.last
 		
-		#TODO: can no longer use hypot method because now we need to calculate from [44, -26], not [0, 0]
-		distance = Math.hypot(
-			previous_flight_curr_position.first - current_position.first - FINAL_APPROACH_COORDS.first,
-			previous_flight_curr_position.last - current_position.last - FINAL_APPROACH_COORDS.last
-		)
-		#p distance.to_s
-		distance < MIN_DISTANCE_BETWEEN_PLANES
+		distance = Math.hypot(current_position.first - FINAL_APPROACH_COORDS.first, current_position.last - FINAL_APPROACH_COORDS.last)
+		
+		printf "Distance between flights: %d\n", distance
+		distance < MIN_DISTANCE_BETWEEN_PLANES || prev_flight_arrival_time > (created_at + flight_duration)
 	end
   
   def adjust_speed new_speed
@@ -148,4 +143,8 @@ class Flight < ActiveRecord::Base
   def divert
     update(status: :diverted)
   end
+	
+	def to_s
+		"Flight ##{flight_number} (ID #{id}) flying at #{speed} m/s"
+	end
 end

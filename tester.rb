@@ -17,7 +17,7 @@ class ControllerTester < Minitest::Test
   end
   
   def test_flight_creation
-    assert_instance_of Flight, Flight.create({ flight_number: 'ABC1234', speed: 120, status: :descent })
+    assert_instance_of Flight, Flight.create({ flight_number: 'ABC1234', speed: 128, status: :descent })
   end
   
   def test_flight_landing
@@ -26,26 +26,21 @@ class ControllerTester < Minitest::Test
   
   def test_distance_traveled
     assert_equal 0, @plane.distance_traveled(@plane.created_at)
-    #assert_equal Flight::FLIGHT_DISTANCE, @plane.distance_traveled(@plane)
+		assert_equal Flight::FLIGHT_DISTANCE, @plane.distance_traveled(@plane.created_at + 505)
   end
   
   def test_current_flight_position_by_time
-    assert_equal [16000, 47000], @plane.current_position_by_time(@plane.created_at)
-    
-		snapshot = @plane.created_at + (3000 / @plane.speed)
-    assert_equal [16100, 33134], @plane.current_position_by_time(snapshot)
+		assert_equal [16000, 47000], @plane.current_position_by_time(@plane.created_at), @plane.to_s
+		assert_equal Flight::FINAL_APPROACH_COORDS, @plane.current_position_by_time(@plane.created_at + @plane.flight_duration), @plane.to_s
+		snapshot = @plane.created_at + (3200 / @plane.speed)
+    assert_equal [16105, 31983], @plane.current_position_by_time(snapshot), @plane.to_s
   end
   
   def test_current_flight_position_by_distance
-    assert_equal [16101, 32868], @plane.current_position_by_distance(3000)
+		assert_equal [16105, 31983], @plane.current_position_by_distance(3200), @plane.to_s
     
     #will never be 0,0 because equations aren't accurate enough
     assert_equal Flight::FINAL_APPROACH_COORDS, @plane.current_position_by_distance(Flight::FLIGHT_DISTANCE)
-  end
-  
-  def test_adjust_flight_speed
-    assert_equal true, @plane.adjust_speed(110)
-    #assert_throws ArgumentError, @plane.adjust_speed(80)
   end
   
   def test_flight_duration
@@ -54,9 +49,9 @@ class ControllerTester < Minitest::Test
   
   def test_collision_detection
 		printf "Flight ID %d (speed of %d)\n", @colliding_flight2.id, @colliding_flight2.speed
-    assert_equal true, @colliding_flight2.will_collide?, "Flight 2"
+		assert_equal true, @colliding_flight2.will_collide?, "#2: " + @colliding_flight2.to_s
 		printf "Flight ID %d (speed of %d)\n", @colliding_flight3.id, @colliding_flight3.speed
-    assert_equal false, @colliding_flight3.will_collide?, "Flight 3"
+    assert_equal false, @colliding_flight3.will_collide?, "#3: " + @colliding_flight3.to_s
   end
   
   def test_flight_diversion
@@ -65,6 +60,11 @@ class ControllerTester < Minitest::Test
   
   def test_maximum_speed_calculation
     assert_equal 115, @colliding_flight3.find_maximum_speed
+  end
+  
+  def test_adjust_flight_speed
+    assert_equal true, @plane.adjust_speed(128)
+    #assert_throws ArgumentError, @plane.adjust_speed(80)
   end
   
 	def test_current_flights
