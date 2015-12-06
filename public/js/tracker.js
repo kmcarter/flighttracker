@@ -2,12 +2,18 @@ var settings = {
   refreshInterval: 5,
   mapOptions: {
     seriesDefaults: {
+      //color: '#BFFF00',
       showLine: false,
       pointLabels: {show: true, location:'se', ypadding: 5},
     },
     axes: {
       xaxes: { min: 0, max: 20000 },
       yaxes: {min: -80000, max: 50000 }
+    },
+    grid: {
+      //gridLineColor: '#BFFF00',
+      //background: '#000000', 
+      //borderColor: '#BFFF00'
     }
   }
 }
