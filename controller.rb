@@ -24,7 +24,7 @@ class FlightController
 	def direct_flight flight
 		if flight.will_collide?
 			new_speed = flight.find_maximum_speed
-			if !new_speed.is_nil? && new_speed >= Flight::MIN_DESCENT_SPEED
+			if new_speed >= Flight::MIN_DESCENT_SPEED
 				flight.adjust_speed new_speed
 			else
 				flight.divert
@@ -103,17 +103,9 @@ class Flight < ActiveRecord::Base
 	
 	def will_collide? at_speed = speed
 		return false if previous_flight.nil?
-		#p "Previous flight create time: " + previous_flight.created_at.to_s
+		
 		prev_flight_arrival_time = previous_flight.created_at + previous_flight.flight_duration
-		#printf "Previous flight duration and speed: %s, %d\n", previous_flight.flight_duration.to_s, previous_flight.speed
-		#p "Previous flight created at: " + previous_flight.created_at.to_s
-		#p "Previous flight arrival time: " + prev_flight_arrival_time.to_s
-		current_position = current_position_by_time(prev_flight_arrival_time)
-		#printf "Current position of current flight: %d, %d\n", current_position.first, current_position.last
-		
 		distance = Math.hypot(current_position.first - FINAL_APPROACH_COORDS.first, current_position.last - FINAL_APPROACH_COORDS.last)
-		
-		#printf "Distance between flights: %d\n", distance
 		distance < MIN_DISTANCE_BETWEEN_PLANES || prev_flight_arrival_time > (created_at + flight_duration)
 	end
   
@@ -127,14 +119,16 @@ class Flight < ActiveRecord::Base
 	
 	def find_maximum_speed
 		beginning_speed = speed - 1
-		while beginning_speed > MIN_DESCENT_SPEED
+		#testing against MIN_DESCENT_SPEED-1 so that we know when we exit the loop unsuccessfully
+		#(i.e. beginning_speed is < MIN_DESCENT_SPEED)
+		while beginning_speed >= MIN_DESCENT_SPEED - 1
 			if will_collide? beginning_speed
 				beginning_speed -= 1
 			else
-				return beginning_speed
+				break
 			end
 		end
-		nil
+		beginning_speed
 	end
 	
 	def landed?
