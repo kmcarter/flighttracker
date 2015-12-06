@@ -59,7 +59,7 @@ class ControllerTester < Minitest::Test
   
   def test_adjust_flight_speed
     assert_equal true, @plane.adjust_speed(128)
-    #assert_throws ArgumentError, @plane.adjust_speed(80)
+		assert_raises (ArgumentError) { @plane.adjust_speed(80) }
   end
   
   def test_flight_landing
