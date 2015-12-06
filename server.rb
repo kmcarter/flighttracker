@@ -46,7 +46,7 @@ class FlightServer
     path = WEB_ROOT + rel_path
     
     if rel_path.start_with? '/entry'
-      message = JSON.generate(new_flight(rel_path))
+      message = JSON.generate(new_flight(rel_path).to_h)
       return headers(message.size) + message
     elsif rel_path.start_with? '/tracking_info'
       message = flight_statuses_to_json

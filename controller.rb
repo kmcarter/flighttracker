@@ -95,7 +95,7 @@ class Flight < ActiveRecord::Base
   end
 	
 	def current_altitude snapshot = Time.now
-		ENTRY_ALTITUDE - (snapshot - created_at) * 9200 / flight_duration
+		(ENTRY_ALTITUDE - (snapshot - created_at) * 9200 / flight_duration).round(0)
 	end
 	
 	def flight_duration
