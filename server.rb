@@ -46,7 +46,7 @@ class FlightServer
     path = WEB_ROOT + rel_path
     
     if rel_path.start_with? '/entry'
-      message = JSON.generate(new_flight(path))
+      message = JSON.generate(new_flight(rel_path))
       return headers(message.size) + message
     elsif rel_path.start_with? '/tracking_info'
       message = flight_statuses_to_json
@@ -80,6 +80,7 @@ class FlightServer
   
   def new_flight path
     query_args = path.sub(/\/entry\?/, '').sub(/flight/, 'flight_number').split('&').map { | pair | pair.split('=') }.to_h
+    query_args[:status] = :descent
     @controller.new_flight(query_args)
   end
   
@@ -91,4 +92,4 @@ class FlightServer
 end
 
 srv = FlightServer.new(3000)
-#srv.start
+srv.start

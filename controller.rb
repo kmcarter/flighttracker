@@ -19,6 +19,7 @@ class FlightController
 		new_flight.previous_flight = @most_recent_flight
 		direct_flight new_flight
 		@most_recent_flight = new_flight
+		new_flight
 	end
 	
 	def direct_flight flight
