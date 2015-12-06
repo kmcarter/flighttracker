@@ -54,7 +54,7 @@ class ControllerTester < Minitest::Test
   
   def test_maximum_speed_calculation
     assert_equal 114, @colliding_flight3.find_maximum_speed
-		assert_equal nil, @colliding_flight1.find_maximum_speed
+		assert_equal 104, @colliding_flight1.find_maximum_speed
   end
   
   def test_adjust_flight_speed

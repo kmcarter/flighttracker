@@ -105,6 +105,7 @@ class Flight < ActiveRecord::Base
 		return false if previous_flight.nil?
 		
 		prev_flight_arrival_time = previous_flight.created_at + previous_flight.flight_duration
+		current_position = current_position_by_time(prev_flight_arrival_time)
 		distance = Math.hypot(current_position.first - FINAL_APPROACH_COORDS.first, current_position.last - FINAL_APPROACH_COORDS.last)
 		distance < MIN_DISTANCE_BETWEEN_PLANES || prev_flight_arrival_time > (created_at + flight_duration)
 	end
