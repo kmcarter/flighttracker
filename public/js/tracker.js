@@ -8,7 +8,7 @@ var settings = {
     },
     axes: {
       xaxes: { min: 0, max: 20000 },
-      yaxes: {min: -80000, max: 50000 }
+      yaxes: { min: -80000, max: 60000 }
     },
     grid: {
       //gridLineColor: '#BFFF00',

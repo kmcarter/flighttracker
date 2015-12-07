@@ -85,7 +85,7 @@ class FlightServer
   end
   
   def flight_statuses_to_json
-    all_flights = FlightController.landed_flights.concat(FlightController.airborne_flights)
+    all_flights = @controller.landed_flights.concat(@controller.airborne_flights)
     flights = all_flights.map { | flight | flight.to_h }
     JSON.generate({ aircrafts: flights })
   end

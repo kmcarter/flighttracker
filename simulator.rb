@@ -27,4 +27,4 @@ class FlightSimulator
 end
 
 sim = FlightSimulator.new
-sim.start
+#sim.start

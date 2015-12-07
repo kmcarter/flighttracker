@@ -25,18 +25,32 @@ class ControllerTester < Minitest::Test
 		assert_equal Flight::FLIGHT_DISTANCE, @plane.distance_traveled(@plane.created_at + 505)
   end
   
+	def test_current_flight_position_by_distance
+		#descent
+		
+		#final_approach
+		
+		#landed
+		landed_flight = Flight.where(status: 2).limit(1).first
+		assert_equal [Flight::FINAL_APPROACH_COORDS.first, Flight::FINAL_APPROACH_DISTANCE], landed_flight.current_position_by_distance, landed_flight.to_s
+	end
+  
   def test_current_flight_position_by_time
+		#descent
 		assert_equal [16000, 47000], @plane.current_position_by_time(@plane.created_at), @plane.to_s
 		assert_equal Flight::FINAL_APPROACH_COORDS, @plane.current_position_by_time(@plane.created_at + @plane.flight_duration), @plane.to_s
 		snapshot = @plane.created_at + (3200 / @plane.speed)
     assert_equal [16105, 31983], @plane.current_position_by_time(snapshot), @plane.to_s
+		
+		#final approach
+		
   end
   
-  def test_current_flight_position_by_distance
-		assert_equal [16105, 31983], @plane.current_position_by_distance(3200), @plane.to_s
+	def test_descent_position_by_distance
+		assert_equal [16105, 31983], @plane.descent_position(3200), @plane.to_s
     
     #will never be 0,0 because equations aren't accurate enough
-    assert_equal Flight::FINAL_APPROACH_COORDS, @plane.current_position_by_distance(Flight::FLIGHT_DISTANCE)
+    assert_equal Flight::FINAL_APPROACH_COORDS, @plane.descent_position(Flight::FLIGHT_DISTANCE), @plane.to_s
   end
   
   def test_flight_duration
@@ -67,11 +81,11 @@ class ControllerTester < Minitest::Test
   end
   
 	def test_airborne_flights
-		assert_instance_of Flight::ActiveRecord_Relation, FlightController.airborne_flights
+		assert_instance_of Flight::ActiveRecord_Relation, @controller.airborne_flights
 	end
   
 	def test_landed_flights
-		assert_instance_of Flight::ActiveRecord_Relation, FlightController.landed_flights
+		assert_instance_of Flight::ActiveRecord_Relation, @controller.landed_flights
 	end
 end
 
