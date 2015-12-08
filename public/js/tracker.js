@@ -38,7 +38,6 @@ $(function() {
         if (data.hasOwnProperty('error')) {
           alert(data.error);
         } else {
-          alert(data.status);
           if (data.status == 'run') {
             $button.removeClass('btn-danger').addClass('btn-success').html('<span class="glyphicon glyphicon-check" aria-hidden="true"></span> Disable Simulator');
           } else {
