@@ -1,6 +1,7 @@
 require "socket"
 require "json"
-load 'controller.rb'
+require './controller.rb'
+require './simulator.rb'
 
 class FlightServer
   CONTENT_TYPE_MAPPING = {
@@ -19,17 +20,19 @@ class FlightServer
   def initialize port = 80
     @port = port
     @controller = FlightController.new
+    @simulator = FlightSimulator.new
   end
   
   def start
     @flight_server = TCPServer.open(@port)
+    @simulator.start
     sockaddr = @flight_server.addr
     puts "Flight control server running on #{sockaddr.join(':')}"
 
     loop do
       Thread.start(@flight_server.accept) do | sock |
         path = sock.gets.split[1]
-        p "Request for " + path
+        puts "Request for " + path
         sock.print serve_request(path)
         sock.close
       end
@@ -37,6 +40,7 @@ class FlightServer
   end
   
   def stop
+    @simulator.stop
     @flight_server.close
   end
   
@@ -50,6 +54,9 @@ class FlightServer
       return headers(message.size) + message
     elsif rel_path.start_with? '/tracking_info'
       message = flight_statuses_to_json
+      return headers(message.size) + message
+    elsif rel_path.start_with? '/toggle_sim'
+      message = JSON.generate(toggle_simulator)
       return headers(message.size) + message
     else
       if File.exist?(path) && !File.directory?(path)
@@ -79,9 +86,18 @@ class FlightServer
   end
   
   def new_flight path
+    return {error: "Please pass in parameters"} if path.sub(/\/entry.?/, '') == ''
     query_args = path.sub(/\/entry\?/, '').sub(/flight/, 'flight_number').split('&').map { | pair | pair.split('=') }.to_h
     query_args[:status] = :descent
     @controller.new_flight(query_args)
+  end
+  
+  def toggle_simulator
+    if @simulator.status === :sleep || @simulator.status === false
+      @simulator.start
+    else
+      @simulator.stop
+    end
   end
   
   def flight_statuses_to_json

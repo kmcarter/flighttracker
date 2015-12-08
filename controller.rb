@@ -47,7 +47,7 @@ class FlightController
 	
 	def landed_flights seconds_ago = 120
 		update_flights
-		Flight.where(status: 2).order(created_at: :desc).select{ | flight | Time.now >= flight.time_of_arrival + seconds_ago }
+		Flight.where(status: 2).order(created_at: :desc).select{ | flight | Time.now <= flight.time_of_arrival + seconds_ago }
 	end
 	
 	def self.create_tables
@@ -189,7 +189,16 @@ class Flight < ActiveRecord::Base
 	
 	def to_h
 		current_position = current_position_by_time
-		{ flight: flight_number, x: current_position.first, y: current_position.last, speed: speed, altitude: current_altitude, status: status }
+		{ 
+			flight: flight_number, 
+			x: current_position.first, 
+			y: current_position.last, 
+			speed: speed, 
+			altitude: current_altitude, 
+			status: status, 
+			ingress: created_at.getlocal("-08:00"), 
+			time_of_arrival: time_of_arrival.getlocal("-08:00") 
+		}
 	end
 	
 	#private

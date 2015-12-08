@@ -29,26 +29,71 @@ $(function() {
     $("#refreshInterval").val(settings.refreshInterval);
     $("#refreshIntervalValue").text(settings.refreshInterval);
   });
+  $("#toggle-simulator").click(function() {
+    var $button = $(this);
+    $.ajax('/toggle_sim', {
+      type: 'GET',
+      dataType: 'json',
+      success: function(data) {
+        if (data.hasOwnProperty('error')) {
+          alert(data.error);
+        } else {
+          alert(data.status);
+          if (data.status == 'run') {
+            $button.removeClass('btn-danger').addClass('btn-success').html('<span class="glyphicon glyphicon-check" aria-hidden="true"></span> Disable Simulator');
+          } else {
+            $button.removeClass('btn-success').addClass('btn-danger').html('<span class="glyphicon glyphicon-unchecked" aria-hidden="true"></span> Enable Simulator');
+          }
+        }
+      }
+    });
+    return false;
+  });
   $("#settings-modal form").submit(function() {
     settings.refreshInterval = parseInt($("#refreshInterval").val());
     $("#settings-modal").modal('hide');
     setRefreshCounter();
     return false;
   });
+  $("#new-flight-modal form").submit(function() {
+    var initialSpeed = $("#new-flight-modal form input[name=speed]").val();
+    $.ajax('/entry', {
+      type: 'GET',
+      dataType: 'json',
+      data: $("#new-flight-modal form").serialize(),
+      success: function(data) {
+        if (data.hasOwnProperty('error')) {
+          alert(data.error);
+        } else {
+          var msg = "Flight #" + data.flight + " has been successfully created";
+          if (data.status == "diverted") {
+            msg += " but has been diverted";
+          } else if (data.speed != initialSpeed) {
+            msg += " but its speed has been adjusted to " + data.speed;
+          }
+          alert(msg);
+        }
+      }
+    });
+    $("#new-flight-modal").modal('hide');
+    return false;
+  });
 });
 
 function refreshData() {
-  $("#flight-data tbody").empty();
+  $("#flight-data tbody, #arrival-data tbody").empty();
   $.ajax('/tracking_info', {
     type: 'GET',
     dataType: 'json',
     success: function(data) {
       $("#timestamp").text(new Date().toString());
       $.each(data.aircrafts, function(i, ele) {
-        $("<tr><td>" + ele.flight + "</td><td>" + 
-          ele.status + "</td><td>" + ele.x + 
-          "</td><td>" + ele.y + "</td><td>" + ele.speed + 
-          "</td><td>" + ele.altitude + "</td></tr>").appendTo("#flight-data tbody");
+        if (ele.status == 'landed') {
+          $("<tr><td>" + ele.flight + "</td><td>" + ele.ingress + "</td><td>" + ele.time_of_arrival + "</td></tr>").appendTo("#arrival-data tbody");
+        } else {
+          $("<tr><td>" + ele.flight + "</td><td>" + ele.status + "</td><td>" + ele.x + "</td><td>" + ele.y + "</td><td>" + ele.speed + 
+            "</td><td>" + ele.altitude + "</td><td>" + ele.ingress + "</td></tr>").appendTo("#flight-data tbody");
+        }
       });
       
       if (flightMap != null) {

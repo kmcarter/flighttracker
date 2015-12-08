@@ -1,4 +1,4 @@
-load 'controller.rb'
+require './controller.rb'
 
 class FlightSimulator
   PLANE_FREQUENCY = 30..40
@@ -11,11 +11,24 @@ class FlightSimulator
   
   def start
     # generates flights every 30-40 seconds
-    loop do
-      p "Generating new flight at #{Time.now.to_s}"
-      @controller.new_flight(generate_flight)
-      sleep rand(PLANE_FREQUENCY)
+    @thread = Thread.start do 
+      loop do
+        puts "Generating new flight at #{Time.now.to_s}"
+        @controller.new_flight(generate_flight)
+        sleep rand(PLANE_FREQUENCY)
+      end
     end
+    { status: @thread.status }
+  end
+  
+  def stop
+    @thread.exit
+    puts "Simulator paused"
+    { status: @thread.status }
+  end
+  
+  def status
+    @thread.status
   end
   
   def generate_flight
@@ -24,6 +37,3 @@ class FlightSimulator
     { flight_number: flight_num, speed: speed, status: :descent }
   end
 end
-
-sim = FlightSimulator.new
-sim.start

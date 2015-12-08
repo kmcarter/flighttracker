@@ -1,0 +1,5 @@
+Once package is unzipped, first run "ruby tester.rb" - this will create the database, some test data, and run unit tests.
+Then run "ruby server.rb" - this will start the server and the simulator. Then point your browser to localhost and view
+simulator progress from the UI. Alternatively, the server is also running at http://ruby.rainworksweb.net/flight_tracker/
+
+Submitted by Kelly Carter
