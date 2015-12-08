@@ -7,42 +7,56 @@ load 'simulator.rb'
 class ControllerTester < Minitest::Test
   def setup
     @controller = FlightController.new
-    @plane = Flight.all.last
-		@colliding_flight3 = Flight.find(756) #115 m/s
-		@colliding_flight2 = Flight.find(757) #128 m/s
-		@colliding_flight1 = Flight.find(758) #105 m/s
+		if ActiveRecord::Base.connection.tables.size == 0
+			FlightController.create_tables
+		end
+		
+		if Flight.all.length == 0
+			@colliding_flight3 = Flight.create({ flight_number: 'ABC1234', speed: 115, status: :descent })
+			@colliding_flight2 = Flight.create({ flight_number: 'ABC1235', speed: 128, status: :descent })
+			@colliding_flight1 = Flight.create({ flight_number: 'ABC1236', speed: 105, status: :descent })
+			@plane = Flight.create({ flight_number: 'ABC1234', speed: 128, status: :descent })
+			@landed_flight = Flight.create({ flight_number: 'ABC1237', speed: 128, status: :landed })
+		else
+			@colliding_flight3 = Flight.find(1) #115 m/s
+			@colliding_flight2 = Flight.find(2) #128 m/s
+			@colliding_flight1 = Flight.find(3) #105 m/s
+			@plane = Flight.all.last
+			@landed_flight = Flight.where(status: 2).limit(1).first
+		end
 		
 		@colliding_flight3.previous_flight = @colliding_flight2
 		@colliding_flight2.previous_flight = @colliding_flight1
   end
   
   def test_flight_creation
-    assert_instance_of Flight, Flight.create({ flight_number: 'ABC1234', speed: 128, status: :descent })
+    assert_instance_of Flight, Flight.create({ flight_number: 'ABC1237', speed: 128, status: :descent })
   end
   
   def test_distance_traveled
     assert_equal 0, @plane.distance_traveled(@plane.created_at)
-		assert_equal Flight::FLIGHT_DISTANCE, @plane.distance_traveled(@plane.created_at + 505)
+		assert_equal Flight::FLIGHT_DISTANCE, @plane.distance_traveled(@plane.created_at + 505), @plane.to_s
   end
   
 	def test_current_flight_position_by_distance
 		#descent
 		
 		#final_approach
+		#assert_equal [Flight::FINAL_APPROACH_COORDS.first, Flight::FINAL_APPROACH_COORDS.last + Flight::FINAL_APPROACH_DISTANCE], @plane.current_position_by_distance(@plane.created_at + @plane.flight_duration), @plane.to_s
 		
 		#landed
-		landed_flight = Flight.where(status: 2).limit(1).first
-		assert_equal [Flight::FINAL_APPROACH_COORDS.first, Flight::FINAL_APPROACH_DISTANCE], landed_flight.current_position_by_distance, landed_flight.to_s
+		assert_equal [Flight::FINAL_APPROACH_COORDS.first, Flight::FINAL_APPROACH_COORDS.last + Flight::FINAL_APPROACH_DISTANCE], @landed_flight.current_position_by_distance, @landed_flight.to_s
 	end
   
   def test_current_flight_position_by_time
 		#descent
 		assert_equal [16000, 47000], @plane.current_position_by_time(@plane.created_at), @plane.to_s
-		assert_equal Flight::FINAL_APPROACH_COORDS, @plane.current_position_by_time(@plane.created_at + @plane.flight_duration), @plane.to_s
+		assert_equal Flight::FINAL_APPROACH_COORDS, @plane.current_position_by_time(@plane.created_at + @plane.descent_duration), @plane.to_s #why does this always return [80, -495]?
 		snapshot = @plane.created_at + (3200 / @plane.speed)
     assert_equal [16105, 31983], @plane.current_position_by_time(snapshot), @plane.to_s
 		
 		#final approach
+		assert_equal [Flight::FINAL_APPROACH_COORDS.first, Flight::FINAL_APPROACH_COORDS.last + Flight::FINAL_APPROACH_DISTANCE], @plane.current_position_by_time(@plane.time_of_arrival), @plane.to_s
 		
   end
   
@@ -53,8 +67,8 @@ class ControllerTester < Minitest::Test
     assert_equal Flight::FINAL_APPROACH_COORDS, @plane.descent_position(Flight::FLIGHT_DISTANCE), @plane.to_s
   end
   
-  def test_flight_duration
-    assert_equal Flight::FLIGHT_DISTANCE / @plane.speed, @plane.flight_duration
+  def test_descent_duration
+    assert_equal Flight::FLIGHT_DISTANCE / @plane.speed, @plane.descent_duration
   end
   
   def test_collision_detection
@@ -76,12 +90,8 @@ class ControllerTester < Minitest::Test
 		assert_raises (ArgumentError) { @plane.adjust_speed(80) }
   end
   
-  def test_flight_landing
-    assert_equal true, @plane.land
-  end
-  
 	def test_airborne_flights
-		assert_instance_of Flight::ActiveRecord_Relation, @controller.airborne_flights
+		assert_instance_of Array, @controller.airborne_flights
 	end
   
 	def test_landed_flights

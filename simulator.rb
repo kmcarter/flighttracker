@@ -2,8 +2,8 @@ load 'controller.rb'
 
 class FlightSimulator
   PLANE_FREQUENCY = 30..40
-  ALPHABET = ('A'..'Z').to_a
-  DIGITS = (0..9).to_a
+  ALPHABET = ('AAA'..'ZZZ').to_a
+  DIGITS = (0..9999).to_a
   
   def initialize
     @controller = FlightController.new
@@ -19,12 +19,11 @@ class FlightSimulator
   end
   
   def generate_flight
-    flight_num = ""
-    6.times { |i| flight_num += (i < 4) ? ALPHABET.sample : DIGITS.sample.to_s }
+    flight_num = ALPHABET.sample + DIGITS.sample.to_s.ljust(4, "0")
     speed = rand(120..130)
     { flight_number: flight_num, speed: speed, status: :descent }
   end
 end
 
 sim = FlightSimulator.new
-#sim.start
+sim.start

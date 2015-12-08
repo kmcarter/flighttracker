@@ -33,13 +33,21 @@ class FlightController
 		end
 	end
 	
+	def update_flights
+		Flight.where(status: [0, 1]).map do | flight | 
+			flight.update_status
+			flight
+		end
+	end
+	
 	def airborne_flights
-		Flight.where(status: [0, 1]).map { | flight | flight.land if flight.landed? }
-		Flight.where(status: [0, 1]).order(created_at: :desc)
+		update_flights.select{ | flight | flight.descending? || flight.in_final_approach? }.sort_by { | flight | flight.status }
+#		Flight.where(status: [0, 1]).order(created_at: :desc)
 	end
 	
 	def landed_flights seconds_ago = 120
-		Flight.where(status: 2, updated_at: (Time.now - seconds_ago..Time.now))
+		update_flights
+		Flight.where(status: 2).order(created_at: :desc).select{ | flight | Time.now >= flight.time_of_arrival + seconds_ago }
 	end
 	
 	def self.create_tables
@@ -86,11 +94,11 @@ class Flight < ActiveRecord::Base
 	def current_position_by_distance distance = distance_traveled
 		update_status
 		
-		if status == "descent"
+		if descending?
 			return descent_position distance
-		elsif status == "final_approach"
+		elsif in_final_approach?
 			return final_approach_position
-		elsif status == "landed"
+		elsif landed?
 			x = FINAL_APPROACH_COORDS.first
 			y = FINAL_APPROACH_COORDS.last + FINAL_APPROACH_DISTANCE
 		else #diverted position
@@ -102,27 +110,41 @@ class Flight < ActiveRecord::Base
   end
 	
 	def current_altitude snapshot = Time.now
-		if status == "descent"
-			(ENTRY_ALTITUDE - (snapshot - created_at) * 9200 / flight_duration).round(0)
-		elsif status == "final_approach"
+		if descending?
+			(ENTRY_ALTITUDE - (snapshot - created_at) * 9200 / descent_duration).round(0)
+		elsif in_final_approach?
 			#Math.hypot(FINAL_APPROACH_ALTITUDE, FINAL_APPROACH_DISTANCE).round(0)
-			#alt = 800 * time_remaining_in_final_approach / total_time_in_final_approach
+			#800 * time_remaining_in_final_approach / total_time_in_final_approach
+			(-800 * (snapshot - created_at - descent_duration - final_approach_duration) / final_approach_duration).round(0)
 		else
 			0
 		end
 	end
 	
 	def flight_duration
+		descent_duration + final_approach_duration
+	end
+	
+	def descent_duration
 		FLIGHT_DISTANCE / speed
 	end
 	
+	#a method rather than a constant, because we theoretically may make it non-linear based on initial plane speed someday
+	def final_approach_duration
+		FINAL_APPROACH_DISTANCE / LANDING_SPEED
+	end
+	
+	def time_of_arrival
+		created_at + flight_duration
+	end
+	
 	def will_collide? at_speed = speed
-		return false if previous_flight.nil?
+		return false if previous_flight.nil? || previous_flight.speed >= speed
 		
-		prev_flight_arrival_time = previous_flight.created_at + previous_flight.flight_duration
-		current_position = current_position_by_time(prev_flight_arrival_time)
+		prev_flight_fa_time = previous_flight.created_at + previous_flight.descent_duration
+		current_position = current_position_by_time(prev_flight_fa_time)
 		distance = Math.hypot(current_position.first - FINAL_APPROACH_COORDS.first, current_position.last - FINAL_APPROACH_COORDS.last)
-		distance < MIN_DISTANCE_BETWEEN_PLANES || prev_flight_arrival_time > (created_at + flight_duration)
+		distance < MIN_DISTANCE_BETWEEN_PLANES || prev_flight_fa_time > (created_at + descent_duration)
 	end
   
   def adjust_speed new_speed
@@ -138,22 +160,23 @@ class Flight < ActiveRecord::Base
 		#testing against MIN_DESCENT_SPEED-1 so that we know when we exit the loop unsuccessfully
 		#(i.e. beginning_speed is < MIN_DESCENT_SPEED)
 		while beginning_speed >= MIN_DESCENT_SPEED - 1
-			if will_collide? beginning_speed
-				beginning_speed -= 1
-			else
-				break
-			end
+			break unless will_collide? beginning_speed
+			beginning_speed -= 1
 		end
 		beginning_speed
 	end
 	
-	def landed?
-		#Time.now - created_at > flight_duration + (FINAL_APPROACH_DISTANCE / (speed + 70 / 2))
-		status == :landed
+	def descending?
+		status == "descent"
 	end
 	
-	def land
-		result = update(status: :landed)
+	def in_final_approach?
+		status == "final_approach"
+	end
+	
+	def landed?
+		#Time.now - created_at > descent_duration + (FINAL_APPROACH_DISTANCE / (speed + 70 / 2))
+		status == "landed"
 	end
   
   def divert
@@ -171,10 +194,10 @@ class Flight < ActiveRecord::Base
 	
 	#private
 	def update_status
-		#p Time.now.to_s + " vs. " + (created_at + flight_duration).to_s + " vs. " + (created_at + flight_duration + (FINAL_APPROACH_DISTANCE / LANDING_SPEED)).to_s
-		if Time.now >= created_at + flight_duration + (FINAL_APPROACH_DISTANCE / LANDING_SPEED)
+		#p Time.now.to_s + " vs. " + (created_at + descent_duration).to_s + " vs. " + (created_at + descent_duration + final_approach_duration).to_s
+		if Time.now >= created_at + descent_duration + final_approach_duration
 			update(status: :landed)
-		elsif Time.now >= created_at + flight_duration
+		elsif Time.now >= created_at + descent_duration
 			update(status: :final_approach)
 		end
 	end
@@ -194,7 +217,7 @@ class Flight < ActiveRecord::Base
 	
 	def final_approach_position
 		x = FINAL_APPROACH_COORDS.first
-		y = FINAL_APPROACH_COORDS.last + LANDING_SPEED * (Time.now - created_at - flight_duration)
+		y = FINAL_APPROACH_COORDS.last + LANDING_SPEED * (Time.now - created_at - descent_duration)
 
 		return [x.round(0), y.round(0)]
 	end
