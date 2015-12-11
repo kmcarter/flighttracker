@@ -1,5 +1,1 @@
-Once package is unzipped, first run "ruby tester.rb" - this will create the database, some test data, and run unit tests. You'll then need to uncomment out the
-last line of server.rb. Then run "ruby server.rb" - this will start the server and the simulator. Then point your browser to localhost and view
-simulator progress from the UI. Project will also running at http://port-3000.a1avdihfwp14idgr7wi37r3lkgldila98gb5uddwmte29.box.codeanywhere.com/
-
-Submitted by Kelly Carter
+Once package is unzipped, first run "ruby tester.rb" - this will create the database, some test data, and run unit tests. You'll then need to uncomment out the last line of server.rb. Then run "ruby server.rb" - this will start the server and the simulator. Then point your browser to localhost and view simulator progress from the UI. Project will also running at http://port-3000.a1avdihfwp14idgr7wi37r3lkgldila98gb5uddwmte29.box.codeanywhere.com/
